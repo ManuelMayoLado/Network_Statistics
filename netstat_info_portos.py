@@ -92,6 +92,9 @@ def html_netstat_info(abrir=0):
 	if abrir:
 		webbrowser.open("tabla_info_portos.html")
 		
+def matar_servicio(pid):
+	os.system("TASKKILL /PID "+str(pid))
+		
 
 html_netstat_info(1)
 	
