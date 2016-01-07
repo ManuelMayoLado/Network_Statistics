@@ -97,16 +97,20 @@ def html_netstat_info(abrir=0):
 
 	tags_apertura = "<html>\n<head>\n<title>info netstat</title>\n</head>\n"
 	tags_style = "<style>\ntable {border-collapse: collapse;}\ntd {padding: 5px;}\n</style>\n"
-	tags_body = "<body>\n<table border=1 bgcolor=#F8F8F8>\n"
-	tags_tabla_cabecera = ("<tr bgcolor='lightblue' style='font-weight:bold'>\n<td>Protocolo</td>"+
+	tags_body = "<body>\n"
+	tags_tabla_cabecera_con = ("<table border=1 bgcolor=#F8F8F8>\n"+
+							"<tr bgcolor='lightblue' style='font-weight:bold'>\n<td>Protocolo</td>"+
 							"<td>Direcci&oacute;n local</td><td>Direcci&oacute;n remota</td>"+
 							"<td>PID</td><td>Servizo</td><td>Estado</td>\n</tr>\n")
+	tags_tabla_cabezera_ser = ("<table border=1 bgcolor=#F8F8F8>\n"+
+							"<tr bgcolor='lightblue' style='font-weight:bold'>\n<td>Servicio</td>"+
+							"<td>N&uacutemero Conexi&oacutens</td><td>PIDS</td></tr>\n")
 	tags_final = "</body>\n</html>"
 	
 	html_document.write(tags_apertura)
 	html_document.write(tags_style)
 	html_document.write(tags_body)
-	html_document.write(tags_tabla_cabecera)
+	html_document.write(tags_tabla_cabecera_con)
 	
 	for info_porto in netstat_conexions():
 		local_ip,local_port = findall("(.+):(.+)$",info_porto["local"])[0]
@@ -124,6 +128,7 @@ def html_netstat_info(abrir=0):
 		color_remota = "#F8F8F8"
 		if findall("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",remota_ip) and remota_ip != "0.0.0.0":
 			color_remota = "#FCEBE0"
+		#TABLA CONEXIÓNS
 		html_document.write("<tr><td>"+info_porto["protocolo"]+"</td>"+
 			"<td>"+local_ip+":"+"<font color=brown>"+local_port+"</font></td>"+
 			"<td bgcolor="+color_remota+">"+remota_ip+":"+"<font color=brown>"+remota_port+"</font></td>"+
@@ -131,8 +136,19 @@ def html_netstat_info(abrir=0):
 			"<td>"+ (info_porto["servizo"] if "servizo" in info_porto else " ") +"</td>"+
 			"<td bgcolor="+color_estado+">"+ (info_porto["estado"] if "estado" in info_porto else " ") +"</td>"+
 			"</tr>\n")
-					
+			
 	html_document.write("</table>")
+	html_document.write("\n<br/>")
+	
+	#TABLA SERVICIOS
+	html_document.write(tags_tabla_cabezera_ser)
+	for servicio in num_servizos():
+		html_document.write("<tr><td>"+servicio["nome"]+"</td>"+
+			"<td>"+str(servicio["num"])+"</td>"+
+			"<td>"+", ".join(map(str,servicio["pids"]))+"</td></tr>\n")
+	
+	html_document.write("</table>")
+	html_document.write("\n<br/>")
 	
 	html_document.close()
 	
@@ -141,10 +157,6 @@ def html_netstat_info(abrir=0):
 		
 def matar_servicio(pid):
 	os.system("TASKKILL /PID "+str(pid))
-		
-
-for servizo in num_servizos():
-	print(servizo["nome"],"num: "+str(servizo["num"]),"pids: "+str(servizo["pids"]))
 	
 html_netstat_info(1)
 	
