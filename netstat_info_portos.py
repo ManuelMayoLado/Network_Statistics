@@ -67,17 +67,19 @@ def num_servizos():
 	netstat_conexions_var = netstat_conexions()
 	
 	for conect in netstat_conexions_var:
-		if conect["servizo"] in dict_num_servizos:
-			dict_num_servizos[conect["servizo"]] += 1
-		else:
-			dict_num_servizos[conect["servizo"]] = 1
+		if "servizo" in conect:
+			if conect["servizo"] in dict_num_servizos:
+				dict_num_servizos[conect["servizo"]] += 1
+			else:
+				dict_num_servizos[conect["servizo"]] = 1
 	
 	for servizo in dict_num_servizos:
 		dict_info_servizo = {"nome":servizo,
 							"num":dict_num_servizos[servizo],"pids":[]}
 		for conect in netstat_conexions_var:
-			if conect["servizo"] == servizo and not conect["pid"] in dict_info_servizo["pids"]:
-				dict_info_servizo["pids"].append(conect["pid"])
+			if "servizo" in conect:
+				if conect["servizo"] == servizo and not conect["pid"] in dict_info_servizo["pids"]:
+					dict_info_servizo["pids"].append(conect["pid"])
 		lista_info_servizos.append(dict_info_servizo)
 	
 	return lista_info_servizos
