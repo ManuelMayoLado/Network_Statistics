@@ -128,7 +128,7 @@ def html_netstat_info(abrir=0):
 			if info_porto["estado"] == "CLOSE_WAIT":
 				color_estado = "#F3DDCD"
 		color_remota = "#F8F8F8"
-		if findall("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",remota_ip) and remota_ip != "0.0.0.0":
+		if findall("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",remota_ip) and remota_ip not in ["0.0.0.0","127.0.0.1"]:
 			color_remota = "#FCEBE0"
 		#TABLA CONEXIÓNS
 		html_document.write("<tr><td>"+info_porto["protocolo"]+"</td>"+
