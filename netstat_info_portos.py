@@ -159,9 +159,9 @@ def html_netstat_info(abrir=0):
 		
 def matar_servicio(pid):
 	os.system("TASKKILL /PID "+str(pid))
+
 	
 html_netstat_info(1)
-	
 	
 	
 	
