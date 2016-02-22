@@ -4,6 +4,7 @@
 
 import os
 import Tkinter
+import re
 
 def servizos_pid():
 	#COMANDO PARA ESTRAER OS PID DOS DIFERENTES SERVIZOS
@@ -43,35 +44,52 @@ def netstat_conexions():
 	#CONEXIONS ESTABLECIDAS
 	ESTABLISHED = {}
 	
-	netstat_servizos = []
-	
 	for info_porto in os_portos_usados:
+		#SEPARAMOS OS DATOS DE CADA LINHA DE 'info_porto'
 		l_info_porto = info_porto.split()
 		if len(l_info_porto) == 5:
-			if l_info_porto[4] in dict_servizos_pid:
-				netstat_servizos.append({
-					"protocolo":l_info_porto[0],"local":l_info_porto[1],
-					"remota":l_info_porto[2],"estado":l_info_porto[3],"pid":l_info_porto[4],
-					"servizo":dict_servizos_pid[l_info_porto[4]]})
-			else:
-				netstat_servizos.append({
-					"protocolo":l_info_porto[0],"local":l_info_porto[1],
-					"remota":l_info_porto[2],"estado":l_info_porto[3],"pid":l_info_porto[4]})
-					
-		elif len(l_info_porto) == 4:
-			if l_info_porto[3] in dict_servizos_pid:
-				netstat_servizos.append({
-						"protocolo":l_info_porto[0],"local":l_info_porto[1],
-						"remota":l_info_porto[2],"pid":l_info_porto[3],
-						"servizo":dict_servizos_pid[l_info_porto[3]]})
-			else:
-				netstat_servizos.append({
-						"protocolo":l_info_porto[0],"local":l_info_porto[1],
-						"remota":l_info_porto[2],"pid":l_info_porto[3]})
-						
-	return netstat_servizos
+			#SE O PID SE CORRESPONDE A UN SERVICIO
+			pid = l_info_porto[4]
+			if pid in dict_servizos_pid:
+				#EXTRAEMOS O NOME DO PROTOCOLO E O NOME DO SERVIZO
+				estado = l_info_porto[3]
+				protocolo = l_info_porto[0]
+				nome_servicio = dict_servizos_pid[pid]
+				ip_puerto_local = l_info_porto[1]
+				ip_puerto_remota = l_info_porto[2]
+				re_ip_puerto = "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+"
+				#SEPARAMOS OS SERVIZOS A ESCOITA DAS CONEXIÓNS ESTABLECIDAS
+				#SERVIZOS A ESCOITA
+				if estado == "LISTENING":
+					#if re.findall(re_ip_puerto,ip_puerto_local) and re.findall(re_ip_puerto,ip_puerto_local):
+						if not l_info_porto[4] in LISTENING:
+							LISTENING[pid] = {"servizo":nome_servicio,"local":[]}
+							LISTENING[pid]["local"].append([protocolo,ip_puerto_local])
+						elif not [protocolo,ip_puerto_local] in LISTENING[pid]["local"]:
+							LISTENING[pid]["local"].append([protocolo,ip_puerto_local])
+				else:
+				#CONEXIONS
+					#if re.findall(re_ip_puerto,ip_puerto_local) and re.findall(re_ip_puerto,ip_puerto_local):
+						if not pid in ESTABLISHED:
+							ESTABLISHED[pid] = {"servizo":nome_servicio,"estado":estado,"conexions":[]}
+							ESTABLISHED[pid]["conexions"].append([protocolo,estado,ip_puerto_local,ip_puerto_remota])
+						elif not [protocolo,ip_puerto_local,ip_puerto_remota] in ESTABLISHED[pid]["conexions"]:
+							ESTABLISHED[pid]["conexions"].append([protocolo,estado,ip_puerto_local,ip_puerto_remota])
 	
-print netstat_conexions()
+	print ":::::::::::::"
+	print "LISTENING"
+	for x in LISTENING:
+		print "pid: "+str(x)+" "+str(LISTENING[x]["servizo"])
+		for i in LISTENING[x]["local"]:
+			print "\t"+str(i)
+	print ":::::::::::::"
+	print "ESTABLISHED"
+	for x in ESTABLISHED:
+		print "pid: "+str(x)+" "+str(ESTABLISHED[x]["servizo"])
+		for i in ESTABLISHED[x]["conexions"]:
+			print "\t"+str(i)
+	
+netstat_conexions()
 	
 def num_servizos():
 
