@@ -6,7 +6,6 @@ import os
 import re
 import socket
 import time
-import Tkinter
 
 def servizos_pid():
 	#COMANDO PARA ESTRAER OS PID DOS DIFERENTES SERVIZOS
