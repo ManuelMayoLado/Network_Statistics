@@ -98,7 +98,14 @@ def netstat_conexions():
 		for i in LISTENING[x]["conexions"]:
 			print "\t"+i["protocolo"]+" "+"local: "+i["local"]
 			for u in i["conectado"]:
-				print "\t\t>> conexion dende: "+str(u)
+				servizo_conectando = False
+				for s in ESTABLISHED.values():
+					if i["local"] in [x["remota"] for x in s["conexions"]]:
+						servizo_conectando = s["servizo"]
+				if servizo_conectando:
+					print "\t\t>> conexion dende: "+str(u)+", servizo: "+str(servizo_conectando)
+				else:
+					print "\t\t>> conexion dende: "+str(u)
 	print ""
 	print "ESTABLISHED"
 	print ":::::::::::::"
@@ -109,7 +116,8 @@ def netstat_conexions():
 
 while True:
 	netstat_conexions()
-	time.sleep(1)
+	print ""
+	raw_input("PULSA 'ENTER' PARA REFRESCAR")
 	
 	
 	
