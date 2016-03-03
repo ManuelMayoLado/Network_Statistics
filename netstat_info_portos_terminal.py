@@ -82,7 +82,7 @@ def netstat_conexions():
 						for listen in lista_escoitando:
 							for ip in listen:
 								if ip_puerto_local.split(":")[0] in IPS and ip_puerto_local.split(":")[1] == ip["local"].split(":")[1]:
-									ip["conectado"].append(ip_puerto_remota)
+									ip["conectado"].append([ip_puerto_remota, estado])
 									conexion_entrante = True
 						if not conexion_entrante:
 							if not pid in ESTABLISHED:
@@ -98,21 +98,40 @@ def netstat_conexions():
 		for i in LISTENING[x]["conexions"]:
 			print "\t"+i["protocolo"]+" "+"local: "+i["local"]
 			for u in i["conectado"]:
-				servizo_conectando = False
-				for s in ESTABLISHED.values():
-					if i["local"] in [x["remota"] for x in s["conexions"]]:
-						servizo_conectando = s["servizo"]
-				if servizo_conectando:
-					print "\t\t>> conexion dende: "+str(u)+", servizo: "+str(servizo_conectando)
-				else:
-					print "\t\t>> conexion dende: "+str(u)
+				if u[1] in ["ESTABLISHED"]:
+					ip_remota = u[0].split(":")[0]
+					if ip_remota in ["127.0.0.1","0.0.0.0"]:
+						servizo_conectando = False
+						for s in ESTABLISHED.values():
+							if i["local"] in [x["remota"] for x in s["conexions"]]:
+								servizo_conectando = s["servizo"]
+						if servizo_conectando:
+							print "\t\t>> conexion dende: "+str(u[0])+", servizo: "+str(servizo_conectando)
+						else:
+							print "\t\t>> conexion dende: "+str(u[0])
+					else:
+						print "\t\t>> conexion dende: "+str(u[0])
 	print ""
 	print "ESTABLISHED"
 	print ":::::::::::::"
-	for x in ESTABLISHED:
-		print "pid: "+str(x)+" "+str(ESTABLISHED[x]["servizo"])
-		for i in ESTABLISHED[x]["conexions"]:
-			print "\t"+i["protocolo"]+" "+i["estado"]+" "+"local: "+i["local"]+", "+"remota: "+i["remota"]
+	for j in ESTABLISHED:
+		if "ESTABLISHED" in [x["estado"] for x in ESTABLISHED[j]["conexions"]]:
+			print "pid: "+str(j)+" "+str(ESTABLISHED[j]["servizo"])
+			for i in ESTABLISHED[j]["conexions"]:
+				if i["estado"] in ["ESTABLISHED"]:
+					ip_remota = i["remota"].split(":")[0]
+					if ip_remota in ["127.0.0.1", "0.0.0.0"]:
+						servizo_remoto = False
+						for s in LISTENING.values():
+							if i["remota"] in [x["local"] for x in s["conexions"]]:
+								servizo_remoto = s["servizo"]
+						if servizo_remoto:
+							print ("\t"+i["protocolo"]+" "+i["estado"]+" "+"local: "+i["local"]+", "+
+									"remota: "+i["remota"]+", "+"conectando a: "+servizo_remoto)
+						else:
+							print "\t"+i["protocolo"]+" "+i["estado"]+" "+"local: "+i["local"]+", "+"remota: "+i["remota"]
+					else:
+						print "\t"+i["protocolo"]+" "+i["estado"]+" "+"local: "+i["local"]+", "+"remota: "+i["remota"]
 
 while True:
 	netstat_conexions()
