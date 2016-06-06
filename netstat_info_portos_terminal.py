@@ -7,6 +7,9 @@ import re
 import socket
 import time
 
+if os.name == "posix":
+	print "Lanzar programa como superusuario"
+
 def servizos_pid():
 	#COMANDO PARA ESTRAER OS PID DOS DIFERENTES SERVIZOS
 	os_servizos_pid = os.popen("tasklist").read().split("\n")
@@ -41,9 +44,40 @@ def netstat_conexions():
 	IPS.append("127.0.0.1")
 	IPS.append("0.0.0.0")
 	#COMANDO PARA VER AS CONEXIONS ACTIVAS
-	os_portos_usados = os.popen("netstat -oan").read().split("\n")
+	if os.name == "nt":
+		os_portos_usados = os.popen("netstat -oan").read().split("\n")
+	else:
+		os_netstat = os.popen("sudo netstat -anptu").read().split("\n")
+		os_portos_usados = []
+		dict_servizos_pid = {}
+		for line in os_netstat[2:]:
+			line_s = line.split()
+			line_s = [x for x in line_s if len(x)>1 and not x.isdigit()]
+			if len(line_s) > 3:
+				if len(line_s) == 4:
+					if len(line_s[3].split("/")) > 1:
+						serv_name_s = line_s[3].split("/")[1]
+						pid_s = line_s[3].split("/")[0]
+					else:
+						serv_name_s = "none"
+						pid_s = "none"
+					os_portos_usados.append("\t".join(
+							line_s[:3]+["NONE"]+[pid_s]))
+				else:
+					if len(line_s[4].split("/")) > 1:
+						serv_name_s = line_s[4].split("/")[1]
+						pid_s = line_s[4].split("/")[0]
+					else:
+						print "coas:",line_s
+						serv_name_s = "none"
+						pid_s = "none"
+					line_final = line_s[:4]+[pid_s]
+					if len(line_final) == 5 and line_final[4].isdigit(): 
+						dict_servizos_pid[pid_s] = serv_name_s
+						os_portos_usados.append("\t".join(line_final))
 	#DICT COAS PIDs E OS SERVIZOS
-	dict_servizos_pid = servizos_pid()
+	if os.name == "nt":
+		dict_servizos_pid = servizos_pid()
 	#SERVIZOS A ESCOITA
 	LISTENING = {}
 	#CONEXIONS ESTABLECIDAS
@@ -65,7 +99,7 @@ def netstat_conexions():
 				re_ip_puerto = "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+"
 				#SEPARAMOS OS SERVIZOS A ESCOITA DAS CONEXIÓNS ESTABLECIDAS
 				#SERVIZOS A ESCOITA
-				if estado == "LISTENING":
+				if estado in ["LISTENING","ESCUCHAR"]:
 					if re.findall(re_ip_puerto,ip_puerto_local) and re.findall(re_ip_puerto,ip_puerto_local):
 						conexion = {"protocolo":protocolo,"local":ip_puerto_local,"conectado":[]}
 						if not l_info_porto[4] in LISTENING:
@@ -90,7 +124,10 @@ def netstat_conexions():
 								ESTABLISHED[pid]["conexions"].append(conexion)
 							elif not [protocolo,ip_puerto_local,ip_puerto_remota] in ESTABLISHED[pid]["conexions"]:
 								ESTABLISHED[pid]["conexions"].append(conexion)
-	os.system("cls")
+	if os.name == "nt":
+		os.system("cls")
+	else:
+		os.system("clear")
 	print "LISTENING"
 	print ":::::::::::::"
 	for x in LISTENING:
@@ -98,7 +135,7 @@ def netstat_conexions():
 		for i in LISTENING[x]["conexions"]:
 			print "\t"+i["protocolo"]+" "+"local: "+i["local"]
 			for u in i["conectado"]:
-				if u[1] in ["ESTABLISHED"]:
+				if u[1] in ["ESTABLISHED", "ESTABLECIDO"]:
 					ip_remota = u[0].split(":")[0]
 					if ip_remota in ["127.0.0.1","0.0.0.0"]:
 						servizo_conectando = False
@@ -115,10 +152,11 @@ def netstat_conexions():
 	print "ESTABLISHED"
 	print ":::::::::::::"
 	for j in ESTABLISHED:
-		if "ESTABLISHED" in [x["estado"] for x in ESTABLISHED[j]["conexions"]]:
+		if ("ESTABLISHED" or "ESTABLECIDO" in 
+				[x["estado"] for x in ESTABLISHED[j]["conexions"]]):
 			print "pid: "+str(j)+" "+str(ESTABLISHED[j]["servizo"])
 			for i in ESTABLISHED[j]["conexions"]:
-				if i["estado"] in ["ESTABLISHED"]:
+				if i["estado"] in ["ESTABLISHED","ESTABLECIDO"]:
 					ip_remota = i["remota"].split(":")[0]
 					if ip_remota in ["127.0.0.1", "0.0.0.0"]:
 						servizo_remoto = False
@@ -136,7 +174,11 @@ def netstat_conexions():
 while True:
 	netstat_conexions()
 	print ""
-	raw_input("PULSA 'ENTER' PARA REFRESCAR")
+	try:
+		raw_input("PULSA 'ENTER' PARA REFRESCAR")
+	except:
+		print
+		break
 	
 	
 	
