@@ -6,7 +6,9 @@ import os
 import re
 import socket
 import time
-import Tkinter
+from Tkinter import *
+from ttk import *
+
 
 def servizos_pid():
 	#COMANDO PARA ESTRAER OS PID DOS DIFERENTES SERVIZOS
@@ -91,6 +93,9 @@ def netstat_conexions():
 								ESTABLISHED[pid]["conexions"].append(conexion)
 							elif not [protocolo,ip_puerto_local,ip_puerto_remota] in ESTABLISHED[pid]["conexions"]:
 								ESTABLISHED[pid]["conexions"].append(conexion)
+								
+	return LISTENING
+	
 	os.system("cls")
 	print "LISTENING"
 	print ":::::::::::::"
@@ -108,12 +113,62 @@ def netstat_conexions():
 		for i in ESTABLISHED[x]["conexions"]:
 			print "\t"+i["protocolo"]+" "+i["estado"]+" "+"local: "+i["local"]+", "+"remota: "+i["remota"]
 
-while True:
-	netstat_conexions()
-	time.sleep(1)
-	
-	
-	
-	
+			
+TAMANHO_VENTANA = [400,300]
+
+class App():
+	def __init__(self):
+		self.root = Tk()
+		self.root.resizable(width=True, height=True)
+		self.root.minsize(TAMANHO_VENTANA[0],TAMANHO_VENTANA[1])
+		Label(self.root, text="LISTENING", background="white", width=100, relief="groove").grid(row=1, column=1, pady=5, padx=5, sticky="we")
+		
+		columnas_listening = ["PID","APP","N_Process"]
+		self.treeview_listening = Treeview(self.root,columns=columnas_listening,show="headings",height=12)
+		for c in columnas_listening:
+			self.treeview_listening.heading(c,text=c)
+			self.treeview_listening.column(c,width=150)
+			self.treeview_listening.column(c,minwidth=50)
+		
+		self.treeview_listening.grid(row=2, column=1, pady=5, padx=5, sticky="we")
+		
+		listening=netstat_conexions()
+		
+		for x in listening:
+			pid=x
+			app=listening[x]["servizo"]
+			n_p=len(listening[x]["conexions"])
+			self.treeview_listening.insert("","end",values=[pid,app,n_p])
+		
+		self.update_clock()
+		self.root.mainloop()
+		
+	def update_clock(self):
+		listening=netstat_conexions()
+		
+		for i in self.treeview_listening.get_children():
+			old_values = self.treeview_listening.item(i)["values"]
+			if not str(old_values[0]) in listening:
+				self.treeview_listening.delete(i)
+			else:
+				lis_value = listening[str(old_values[0])]
+				if lis_value["servizo"] == old_values[1] and len(lis_value["conexions"]) == old_values[2]:
+					del listening[str(old_values[0])]
+				else:
+					pid=old_values[0]
+					app=lis_value["servizo"]
+					n_p=len(lis_value["conexions"])
+					#revisar se se cambian así os datos
+					self.treeview_listening.item(i)["values"]=[pid,app,n_p]
+			
+		for x in listening:
+			pid=x
+			app=listening[x]["servizo"]
+			n_p=len(listening[x]["conexions"])
+			self.treeview_listening.insert("","end",values=[pid,app,n_p])
+		self.root.after(1000, self.update_clock)
+		
+if __name__ == "__main__":
+	app = App()
 
 
